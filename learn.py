@@ -15,9 +15,11 @@ import keras
 class LossHistory(keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
         self.losses = []
+        self.accuracy = []
 
     def on_batch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
+        self.accuracy.append(logs.get('acc'))
 
 
 
@@ -33,7 +35,6 @@ class Learner:
         inputs = Input(shape=(4,))
         dense1 = Dense(128, activation='relu')(inputs)
         dense2 = Dense(128, activation='relu')(dense1)
-        #dense3 = Dense(128, activation='relu')(dense2)
 
         # create classification output
         classification_output = Dense(81, activation='softmax')(dense2)
@@ -58,11 +59,10 @@ class Learner:
         # summarize history for accuracy
         if len(self.history.losses) > 0:
             self.data_dump.append(self.history.losses[0])
-            #self.accuracy_dump.append(self.history.params[metrics][1])
+            self.accuracy_dump.append(self.history.accuracy[0])
 
 
-    def plot_graph(self):
-        #print("save loss")
+    def plot_loss_graph(self):
         plt.plot(range(len(self.data_dump)), self.data_dump)
         plt.title('model losses')
         plt.ylabel('loss')
@@ -70,9 +70,7 @@ class Learner:
         plt.savefig('books_read.png')
 
 
-    def evaluate(self):
-        #_, accuracy = self.model.evaluate(x_data, y_data)
-        #print('Accuracy: %.2f' % (accuracy*100))
+    def plot_accuracy_graph(self):
         plt.plot(range(len(self.accuracy_dump)), self.accuracy_dump)
         plt.title('model accuracy')
         plt.ylabel('accuracy')
