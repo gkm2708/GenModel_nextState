@@ -6,6 +6,8 @@ import math
 from gym_unity.envs.unity_env import UnityEnv
 from learn import Learner
 from learn import ReplayBuffer
+import matplotlib.pyplot as plt
+import cv2
 
 np.set_printoptions(threshold=np.inf)
 
@@ -15,7 +17,7 @@ maze_trials, max_episode, max_steps = 1, 100000, 100
 buffer = ReplayBuffer(10000)
 learner = Learner(buffer)
 # assume that unity reads that file and generates maze dynamically
-env = UnityEnv("/homes/gkumar/Documents/UnityProjects/mazeContinuousTarget_fixed_camera/Build/mazeContinuousTarget_fixed_camera_blank_board",
+env = UnityEnv("/home/gaurav/MySharedRepository/mazeContinuousTarget_fixed_camera/Build/mazeContinuousTarget_fixed_camera",
                0,
                use_visual=True,
                uint8_visual=True)
@@ -128,25 +130,61 @@ if __name__ == '__main__':
     for i in range(max_episode):
         runEpisodeContinuous()
         learner.plot_graph()
+        #learner.evaluate()
 
         if i % 1000 == 0:
 
-            #plt.plot(learner.predict(np.expand_dims(np.array([1, 1, 0, 0], dtype=np.float32), axis=0)))
-            #plt.savefig('output'+str(i)+'_'+str(1)+'.png')
-            #plt.close()
-            #plt.plot(learner.predict(np.expand_dims(np.array([1, -1, 0, 0], dtype=np.float32), axis=0)))
-            #plt.savefig('output'+str(i)+'_'+str(1)+'.png')
-            #plt.close()
-            #plt.plot(learner.predict(np.expand_dims(np.array([-1, 1, 0, 0], dtype=np.float32), axis=0)))
-            #plt.savefig('output'+str(i)+'_'+str(1)+'.png')
-            #plt.close()
-            #plt.plot(learner.predict(np.expand_dims(np.array([-1, -1, 0, 0], dtype=np.float32), axis=0)))
-            #plt.savefig('output'+str(i)+'_'+str(1)+'.png')
-            #plt.close()
+            image = np.reshape(learner.predict( np.expand_dims( np.array([1, 1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
+            max_val = np.max(image)
+            image = image*255/max_val
+            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
+            cv2.imwrite("evaluation_0_"+str(i)+".png", image)
+
+            image = np.reshape(learner.predict( np.expand_dims( np.array([-1, 1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
+            max_val = np.max(image)
+            image = image*255/max_val
+            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
+            cv2.imwrite("evaluation_1_"+str(i)+".png", image)
+
+            image = np.reshape(learner.predict( np.expand_dims( np.array([1, -1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
+            max_val = np.max(image)
+            image = image*255/max_val
+            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
+            cv2.imwrite("evaluation_2_"+str(i)+".png", image)
+
+            image = np.reshape(learner.predict( np.expand_dims( np.array([-1, -1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
+            max_val = np.max(image)
+            image = image*255/max_val
+            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
+            cv2.imwrite("evaluation_3_"+str(i)+".png", image)
+
+            #image = learner.predict( np.expand_dims( np.array([1, -1, 0, 0], dtype=np.float32), axis=0) )
+            #cv2.imwrite("evaluation_1_"+str(i)+".png",image.reshape((9, 9)))
+
+            #image = learner.predict( np.expand_dims( np.array([-1, 1, 0, 0], dtype=np.float32), axis=0) )
+            #cv2.imwrite("evaluation_2_"+str(i)+".png",image.reshape((9, 9)))
+
+            #image = learner.predict( np.expand_dims( np.array([-1, -1, 0, 0], dtype=np.float32), axis=0) )
+            #cv2.imwrite("evaluation_3_"+str(i)+".png",image.reshape((9, 9)))
+
+            """
+            plt.plot(learner.predict(np.expand_dims(np.array([1, -1, 0, 0], dtype=np.float32), axis=0)))
+            plt.savefig('output'+str(i)+'_'+str(1)+'.png')
+            plt.close()
+
+            plt.plot(learner.predict(np.expand_dims(np.array([-1, 1, 0, 0], dtype=np.float32), axis=0)))
+            plt.savefig('output'+str(i)+'_'+str(1)+'.png')
+            plt.close()
+
+            plt.plot(learner.predict(np.expand_dims(np.array([-1, -1, 0, 0], dtype=np.float32), axis=0)))
+            plt.savefig('output'+str(i)+'_'+str(1)+'.png')
+            plt.close()
+
             print(learner.predict(np.expand_dims(np.array([1, 1, 0, 0], dtype=np.float32), axis=0)))
             print(learner.predict(np.expand_dims(np.array([1, -1, 0, 0], dtype=np.float32), axis=0)))
             print(learner.predict(np.expand_dims(np.array([-1, 1, 0, 0], dtype=np.float32), axis=0)))
             print(learner.predict(np.expand_dims(np.array([-1, -1, 0, 0], dtype=np.float32), axis=0)))
+            """
 
     # save model
     learner.save_model()

@@ -45,6 +45,7 @@ class Learner:
 
         self.history = LossHistory()
         self.data_dump = []
+        self.accuracy_dump = []
 
         self.model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -57,6 +58,7 @@ class Learner:
         # summarize history for accuracy
         if len(self.history.losses) > 0:
             self.data_dump.append(self.history.losses[0])
+            #self.accuracy_dump.append(self.history.params[metrics][1])
 
 
     def plot_graph(self):
@@ -68,9 +70,14 @@ class Learner:
         plt.savefig('books_read.png')
 
 
-    def evaluate(self, x_data, y_data):
-        _, accuracy = self.model.evaluate(x_data, y_data)
-        print('Accuracy: %.2f' % (accuracy*100))
+    def evaluate(self):
+        #_, accuracy = self.model.evaluate(x_data, y_data)
+        #print('Accuracy: %.2f' % (accuracy*100))
+        plt.plot(range(len(self.accuracy_dump)), self.accuracy_dump)
+        plt.title('model accuracy')
+        plt.ylabel('accuracy')
+        plt.xlabel('epoch')
+        plt.savefig('accuracy map.png')
 
 
     def predict(self, x_data):
