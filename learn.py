@@ -7,6 +7,7 @@ from keras.models import model_from_json
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import keras
+import h5py
 
 
 
@@ -31,6 +32,8 @@ class Learner:
 
         # set buffer
         self.buffer = buffer
+        # Accuracy history
+        self.accuracy_max = 0.0
         # creating model
         inputs = Input(shape=(4,))
         dense1 = Dense(128, activation='relu')(inputs)
@@ -63,32 +66,51 @@ class Learner:
 
 
     def plot_loss_graph(self):
+        plt.figure(1)
         plt.plot(range(len(self.data_dump)), self.data_dump)
         plt.title('model losses')
         plt.ylabel('loss')
         plt.xlabel('epoch')
-        plt.savefig('books_read.png')
+        plt.savefig('loss_map.png')
+        plt.close()
 
 
     def plot_accuracy_graph(self):
+        plt.figure(2)
         plt.plot(range(len(self.accuracy_dump)), self.accuracy_dump)
         plt.title('model accuracy')
         plt.ylabel('accuracy')
         plt.xlabel('epoch')
-        plt.savefig('accuracy map.png')
+        plt.savefig('accuracy_map.png')
+        plt.close()
+
+    def plot_sample(self, text, data, step):
+        plt.figure(3)
+        plt.matshow(data)
+        plt.title(text)
+        plt.savefig('samples/sample'+str(step)+'.png')
+        plt.close()
 
 
-    def predict(self, x_data):
-        return self.model.predict(x_data)
+    def plot_prediction(self, step):
+        batch = self.buffer.sample(1)
+        result = self.model.predict(batch[0])
+        plt.figure(4)
+        plt.matshow(result.reshape((9,9)))
+        plt.title(str(batch[0]))
+        plt.savefig('predictions/prediction'+str(step)+'.png')
+        plt.close()
 
 
     def save_model(self):
-        model_json = self.model.to_json()
-        with open("model.json", "w") as json_file:
-            json_file.write(model_json)
-        # serialize weights to HDF5
-        self.model.save_weights("model.h5")
-        print("Saved model to disk")
+        if len(self.accuracy_dump) >1000:
+            if np.sum(self.accuracy_dump[-1000]) > self.accuracy_max:
+                model_json = self.model.to_json()
+                with open("model.json", "w") as json_file:
+                    json_file.write(model_json)
+                # serialize weights to HDF5
+                self.model.save_weights("model.h5")
+                print("Saved model to disk")
 
 
     def load_model(self):
