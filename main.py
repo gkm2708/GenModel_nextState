@@ -7,7 +7,7 @@ from gym_unity.envs.unity_env import UnityEnv
 from learn import Learner
 from learn import ReplayBuffer
 #import matplotlib.pyplot as plt
-
+import h5py
 from matplotlib import pyplot
 
 import cv2
@@ -22,7 +22,7 @@ buffer = ReplayBuffer(10000)
 learner = Learner(buffer)
 
 # assume that unity reads that file and generates maze dynamically
-env = UnityEnv("/homes/gkumar/Documents/UnityProjects/mazeContinuousTarget_fixed_camera/Build/mazeContinuousTarget_fixed_camera_blank_board",
+env = UnityEnv("/home/gaurav/MySharedRepository/mazeContinuousTarget_fixed_camera/Build/mazeContinuousTarget_fixed_camera",
                0,
                use_visual=True,
                uint8_visual=True)
@@ -30,26 +30,39 @@ env = UnityEnv("/homes/gkumar/Documents/UnityProjects/mazeContinuousTarget_fixed
 
 def drawTrajectory():
 
-    action_repeat = 8
-    diction = []
+    action_repeat = 150
 
-    for i in range(-25, 26, 25):
-        for j in range(-25, 26, 25):
-            diction1 = np.zeros((2, action_repeat))
-            if i != 0 and j != 0:
-                print(i, j)
-                for l in range(5):
+    # size of experience
+    #   11 velocities on x axis
+    #   11 velocities on y axis
+    #   11 actions on x axis
+    #   11 actions on y axis
+    #   150 action repeats
+    #   2 position values
+
+
+    data_dict = np.zeros((11,11,11,11,150,2))
+
+    for i in range(-5, 6):
+        for j in range(-5, 6):
+            for k in range(-5, 6):
+                for l in range(-5, 6):
                     obs_fovea = env.reset()
-                    for k in range(action_repeat):
-                        obs_fovea_next, reward, done, info = env.step([[i], [j], [i], [j]])
-                        x_pos_new = info["brain_info"].vector_observations[0][2]
-                        y_pos_new = info["brain_info"].vector_observations[0][3]
-                        diction1[0][k] = x_pos_new
-                        diction1[1][k] = y_pos_new
+                    obs_fovea_next, reward, done, info = env.step([[i], [j], [k], [l]])
+                    #print(info["brain_info"].vector_observations[0][2])
+                    data_dict[i][j][k][l][0][0] = info["brain_info"].vector_observations[0][2]
+                    data_dict[i][j][k][l][0][1] = info["brain_info"].vector_observations[0][3]
+                    for m in range(1,action_repeat):
+                        x_vel_new = info["brain_info"].vector_observations[0][6]
+                        y_vel_new = info["brain_info"].vector_observations[0][7]
+                        obs_fovea_next, reward, done, info = env.step([[i], [j], [x_vel_new], [y_vel_new]])
+                        data_dict[i][j][k][l][m][0] = info["brain_info"].vector_observations[0][2]
+                        data_dict[i][j][k][l][m][1] = info["brain_info"].vector_observations[0][3]
 
-                    pyplot.plot(diction1[0], diction1[1])
-    pyplot.show()
 
+    h5f = h5py.File('data.h5', 'w')
+    h5f.create_dataset('dataset_1', data=data_dict)
+    h5f.close()
 
     print("Done")
 
@@ -265,7 +278,8 @@ def runEpisodeContinuous():
 
 if __name__ == '__main__':
 
-    #drawTrajectory()
+    drawTrajectory()
+
     for i in range(max_episode):
         data = runEpisodeActionRepeat()
         if i % 100 == 0:
@@ -274,81 +288,3 @@ if __name__ == '__main__':
             learner.plot_sample(str(data[0]), data[1], i)
             learner.plot_prediction(i)
             learner.save_model()
-
-
-'''
-if __name__ == '__main__':
-
-    # if model available
-    # load it
-    if os.path.exists("model.json") and os.path.exists("model.h5"):
-        learner.load_model()
-
-    for i in range(max_episode):
-        runEpisodeContinuous()
-        learner.plot_loss_graph()
-        learner.plot_accuracy_graph()
-
-        if i % 50 == 0:
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([1, 1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_zero_action_0_"+str(i)+".png", image)
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([1, 1, -2, -2], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_0_"+str(i)+".png", image)
-
-
-
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([-1, 1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_zero_action_1_"+str(i)+".png", image)
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([-1, 1, 2, -2], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_1_"+str(i)+".png", image)
-
-
-
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([1, -1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_zero_action_2_"+str(i)+".png", image)
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([1, -1, -2, 2], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_2_"+str(i)+".png", image)
-
-
-
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([-1, -1, 0, 0], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_zero_action_3_"+str(i)+".png", image)
-
-            image = np.reshape(learner.predict( np.expand_dims( np.array([-1, -1, 2, 2], dtype=np.float32), axis=0)), (9, 9))
-            max_val = np.max(image)
-            image = image*255/max_val
-            image = cv2.resize(image, (81,81), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("evaluation_3_"+str(i)+".png", image)
-
-
-    # save model
-    learner.save_model()
-'''
